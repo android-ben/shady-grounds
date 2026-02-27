@@ -10,6 +10,8 @@ import com.punkbytes.shadygrounds.shaders.GradientShader
 import com.punkbytes.shadygrounds.ui.AwesomeAnimatedShaderScreen
 import com.punkbytes.shadygrounds.ui.AwesomeShaderScreen
 import com.punkbytes.shadygrounds.ui.GradientShaderScreen
+import com.punkbytes.shadygrounds.ui.HeartParticlesScreen
+import com.punkbytes.shadygrounds.ui.HeartsShaderScreen
 import com.punkbytes.shadygrounds.ui.NoodleShaderScreen
 
 class MainActivity : ComponentActivity() {
@@ -18,7 +20,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             //AwesomeAnimatedShaderScreen()
-            NoodleShaderScreen()
+            //NoodleShaderScreen()
+            //GradientShaderScreen()
+            //HeartsShaderScreen()
+            HeartParticlesScreen()
         }
 //        setContentView(R.layout.activity_main)
 //        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
