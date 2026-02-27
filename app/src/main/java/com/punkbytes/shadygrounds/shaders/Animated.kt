@@ -83,6 +83,7 @@ half4 main( vec2 fragCoord )
 {
     // Normalize uv with a fixed aspect ratio
     vec2 uv = (fragCoord * 2.0 - iResolution.xy) / iResolution.y;
+    uv.y = -uv.y;
     
     vec3 color = 0.1 + 0.4*palette(sin(0.1*uv.x + 0.24*iTime) + sin(0.22*uv.y + 0.3*iTime) + sin(0.33*uv.x) +sin(0.13*uv.y) + sin(iTime*1.2));
     

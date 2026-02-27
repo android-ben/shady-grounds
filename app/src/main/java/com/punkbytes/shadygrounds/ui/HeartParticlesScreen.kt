@@ -8,40 +8,72 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.unit.dp
 import com.punkbytes.shadygrounds.shaders.HeartParticlesShader
+import com.punkbytes.shadygrounds.shaders.HeartsZoomingShader
 import dev.sebastiano.shaders.AnimatedCanvas
+import dev.sebastiano.shaders.produceAnimationTime
 
 @Composable
 fun HeartParticlesScreen() {
-    val shader = remember { HeartParticlesShader }
-    val brush = remember(shader) { ShaderBrush(shader) }
+    val bgShader = remember { HeartsZoomingShader }
+    val bgBrush = remember(bgShader) { ShaderBrush(bgShader) }
+
+    val particleShader = remember { HeartParticlesShader }
+    val particleBrush = remember(particleShader) { ShaderBrush(particleShader) }
 
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
     var buttonCenter by remember { mutableStateOf(Offset.Zero) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        AnimatedCanvas(Modifier.fillMaxSize()) { time ->
-            shader.setFloatUniform("iResolution", size.width, size.height)
-            shader.setFloatUniform("iTime", time)
-            shader.setFloatUniform("iButtonPos", buttonCenter.x, buttonCenter.y)
-            shader.setFloatUniform("iActive", if (isPressed) 1f else 0f)
-            onDrawBehind {
-                drawRect(brush)
-            }
+    // Snapshot animation time at the moment of press and release so in-flight
+    // hearts keep rising after the button is released.
+    var pressStartTime by remember { mutableStateOf(-1f) }
+    var releaseTime by remember { mutableStateOf(-1f) }
+    val particleTime by produceAnimationTime(speed = 1f)
+
+    LaunchedEffect(isPressed) {
+        if (isPressed) {
+            pressStartTime = particleTime
+            releaseTime = -1f
+        } else if (pressStartTime >= 0f) {
+            releaseTime = particleTime
         }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Background shader
+        AnimatedCanvas(Modifier.fillMaxSize()) { time ->
+            bgShader.setFloatUniform("iResolution", size.width, size.height)
+            bgShader.setFloatUniform("iTime", time)
+            onDrawBehind { drawRect(bgBrush) }
+        }
+
+        // Particle overlay — uses drawWithCache directly so particleTime, pressStartTime
+        // and releaseTime are read as Compose state, triggering redraw each frame.
+        Box(
+            Modifier.fillMaxSize().drawWithCache {
+                particleShader.setFloatUniform("iResolution", size.width, size.height)
+                particleShader.setFloatUniform("iTime", particleTime)
+                particleShader.setFloatUniform("iButtonPos", buttonCenter.x, buttonCenter.y)
+                particleShader.setFloatUniform("iPressTime", pressStartTime)
+                particleShader.setFloatUniform("iReleaseTime", releaseTime)
+                onDrawBehind { drawRect(particleBrush) }
+            }
+        )
 
         Button(
             onClick = {},
@@ -61,3 +93,4 @@ fun HeartParticlesScreen() {
         }
     }
 }
+
