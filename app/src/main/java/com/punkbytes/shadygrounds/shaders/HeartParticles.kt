@@ -7,8 +7,10 @@ val HeartParticlesShader = RuntimeShader(
 uniform float2 iResolution;
 uniform float  iTime;
 uniform float2 iButtonPos;
-uniform float  iPressTime;   // animation time when button was pressed; -1 if never pressed
-uniform float  iReleaseTime; // animation time when button was released; -1 if still pressed
+uniform float  iPressTime;      // current press start; -1 if never pressed
+uniform float  iReleaseTime;    // current press release; -1 if still pressed
+uniform float  iPrevPressTime;  // previous press start; -1 if none
+uniform float  iPrevReleaseTime;// previous press release
 
 const float PI = 3.14159265;
 
@@ -40,12 +42,19 @@ half4 main(vec2 fragCoord) {
         float riseMax  = 350.0 + rand(fi * 31.7) * 200.0;
 
         // birthTime is when this particle's current cycle actually started.
-        // Only render if it was born inside the press window.
+        // Show the particle if its birth falls in the current OR previous press window.
         float genNow    = floor(iTime * speed + phase);
         float birthTime = (genNow - phase) / speed;
 
         float releaseOrNow = (iReleaseTime < 0.0) ? iTime : iReleaseTime;
-        if (birthTime < iPressTime || birthTime > releaseOrNow) continue;
+        bool inCurrentWindow = (birthTime >= iPressTime) && (birthTime <= releaseOrNow);
+
+        float prevReleaseOrNow = (iPrevReleaseTime < 0.0) ? iTime : iPrevReleaseTime;
+        bool inPrevWindow = (iPrevPressTime >= 0.0)
+            && (birthTime >= iPrevPressTime)
+            && (birthTime <= prevReleaseOrNow);
+
+        if (!inCurrentWindow && !inPrevWindow) continue;
 
         float age = fract(iTime * speed + phase);
 

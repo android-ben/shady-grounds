@@ -21,14 +21,16 @@ import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.unit.dp
+import com.punkbytes.shadygrounds.shaders.AwesomeAnimatedGradientShader
 import com.punkbytes.shadygrounds.shaders.HeartParticlesShader
 import com.punkbytes.shadygrounds.shaders.HeartsZoomingShader
+import com.punkbytes.shadygrounds.shaders.SunsetOceanShader
 import dev.sebastiano.shaders.AnimatedCanvas
 import dev.sebastiano.shaders.produceAnimationTime
 
 @Composable
 fun HeartParticlesScreen() {
-    val bgShader = remember { HeartsZoomingShader }
+    val bgShader = remember { SunsetOceanShader }
     val bgBrush = remember(bgShader) { ShaderBrush(bgShader) }
 
     val particleShader = remember { HeartParticlesShader }
@@ -43,10 +45,16 @@ fun HeartParticlesScreen() {
     // hearts keep rising after the button is released.
     var pressStartTime by remember { mutableStateOf(-1f) }
     var releaseTime by remember { mutableStateOf(-1f) }
+    var prevPressStartTime by remember { mutableStateOf(-1f) }
+    var prevReleaseTime by remember { mutableStateOf(-1f) }
     val particleTime by produceAnimationTime(speed = 1f)
 
     LaunchedEffect(isPressed) {
         if (isPressed) {
+            // Shift the current window to previous so its in-flight hearts survive
+            prevPressStartTime = pressStartTime
+            prevReleaseTime = releaseTime
+            // Start a fresh current window
             pressStartTime = particleTime
             releaseTime = -1f
         } else if (pressStartTime >= 0f) {
@@ -71,6 +79,8 @@ fun HeartParticlesScreen() {
                 particleShader.setFloatUniform("iButtonPos", buttonCenter.x, buttonCenter.y)
                 particleShader.setFloatUniform("iPressTime", pressStartTime)
                 particleShader.setFloatUniform("iReleaseTime", releaseTime)
+                particleShader.setFloatUniform("iPrevPressTime", prevPressStartTime)
+                particleShader.setFloatUniform("iPrevReleaseTime", prevReleaseTime)
                 onDrawBehind { drawRect(particleBrush) }
             }
         )
